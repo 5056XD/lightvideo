@@ -11,6 +11,18 @@ const videoData = [
       },
     ]
   },
+  {
+    videoName: "Sample Videos2",
+    seasons: [
+      {
+        seasonName: "Sample Video2",
+        episodeRange: "1",
+        episodes: [
+          { episode: "sample2", url: "https://www.dropbox.com/scl/fi/0yp19q6irn8ox21jp317c/230248_small.mp4?rlkey=35gqhuoqhrt9lz0jr68q2itwz&st=1ll1r7v6&raw=1" },
+        ]
+      },
+    ]
+  },
 ];
 
 // Wait for the DOM to load
