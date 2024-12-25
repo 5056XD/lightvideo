@@ -1,0 +1,894 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+    scroll-behavior: smooth;
+}
+
+body,
+html {
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 150vh;
+    background-image: url('background.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: #222;
+    overflow-y: auto;
+}
+
+main {
+    flex: 1;
+}
+
+script {
+    display: none;
+}
+
+/*LOADING SCREEN  */
+
+#loader-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('loading.gif') center center no-repeat;
+    background-size: cover;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.hidden {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+
+/*LOADING SCREEN  */
+
+/*FOOTER  */
+footer {
+    background-color: #333;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 20px;
+    font-size: 14px;
+}
+
+footer div {
+    display: inline-block;
+    color: wheat;
+}
+
+footer div a {
+    color: wheat;
+}
+
+footer div a:hover {
+    color: rgb(255, 166, 0);
+}
+
+/*FOOTER  */
+
+/*BACK TO TOP BUTTON  */
+
+.backToTop {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgb(20, 20, 20);
+    border: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 0px 0px 4px rgba(180, 160, 255, 0.253);
+    cursor: pointer;
+    transition-duration: 0.3s;
+    overflow: hidden;
+    position: relative;
+    bottom: 10px;
+    /* Distance from the bottom of the viewport */
+    left: 50%;
+    /* Center horizontally */
+    transform: translateX(-50%);
+    /* Adjust the button's position to exactly center it */
+}
+
+.backToTopIcon {
+    width: 12px;
+    transition-duration: 0.3s;
+}
+
+.backToTopIcon path {
+    fill: white;
+}
+
+.backToTop:hover {
+    width: 140px;
+    border-radius: 50px;
+    transition-duration: 0.3s;
+    background-color: rgb(181, 160, 255);
+    align-items: center;
+}
+
+.backToTop:hover .backToTopIcon {
+    /* width: 20px; */
+    transition-duration: 0.3s;
+    transform: translateY(-200%);
+}
+
+.backToTop::before {
+    position: absolute;
+    bottom: -20px;
+    content: "Back to Top";
+    color: white;
+    /* transition-duration: .3s; */
+    font-size: 0px;
+}
+
+.backToTop:hover::before {
+    font-size: 13px;
+    opacity: 1;
+    bottom: unset;
+    /* transform: translateY(-30px); */
+    transition-duration: 0.3s;
+}
+
+/*BACK TO TOP BUTTON  */
+
+/*SEARCH INPUT BAR    */
+
+.search {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    font-weight: 500;
+    font-size: .8vw;
+    color: #fff;
+    background-color: rgb(28, 28, 30);
+    box-shadow: 0 0 .4vw rgba(0, 0, 0, 0.5), 0 0 0 .15vw transparent;
+    border-radius: 0.4vw;
+    border: none;
+    outline: none;
+    padding: 0.5vw;
+    max-width: 500px;
+    transition: .4s;
+    width: 100%;
+}
+
+.search:hover {
+    box-shadow: 0 0 0 .15vw rgba(135, 207, 235, 0.186);
+}
+
+.search:focus {
+    box-shadow: 0 0 0 .15vw skyblue;
+}
+
+/*SEARCH INPUT BAR    */
+
+/* CLEAR BUTTON */
+
+.clear-button {
+    position: absolute;
+    right: 80px;
+    transform: translateY(-125%);
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #888;
+    display: none;
+}
+
+.clear-button.visible {
+    display: block;
+    /* Show the clear button only when there's text */
+}
+
+/* CLEAR BUTTON */
+
+/*BACK BUTTON */
+
+.backButton {
+    display: flex;
+    height: 3em;
+    width: 100px;
+    align-items: center;
+    justify-content: center;
+    background-color: #eeeeee4b;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    transition: all 0.2s linear;
+    cursor: pointer;
+    border: none;
+    background: #fff;
+    margin-left: 30px;
+    margin-right: 30px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    font-size: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-left: 2px ridge #000000;
+    /* Add left border */
+    border-right: 2px ridge #000000;
+    /* Add right border */
+    height: 30px;
+}
+
+.backButton>svg {
+    margin-right: 5px;
+    margin-left: 5px;
+    font-size: 20px;
+    transition: all 0.4s ease-in;
+}
+
+.backButton:hover>svg {
+    font-size: 1.2em;
+    transform: translateX(-5px);
+}
+
+.backButton:hover {
+    transform: translateY(-2px);
+}
+
+.backButton svg {
+    width: 20px;
+    /* Set the width to your desired size */
+    height: 20px;
+    /* Set the height to your desired size */
+}
+
+/*BACK BUTTON*/
+
+/*version*/
+
+.versionLog {
+    margin-left: 8vmax;
+}
+
+.versionLog li {
+    list-style-type: none;
+    margin-left: 10vmax;
+    margin-top: 2vmax;
+    margin-bottom: 2vmax;
+}
+
+/*version*/
+
+/*VIDEO LIST TABLE*/
+
+.videoTable {
+    margin-top: 60px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 60px;
+}
+
+.videoTable th,
+.videoTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    padding-left: 50px;
+}
+
+.videoTable td {
+    text-align: left;
+    padding-left: 80px;
+    font-size: larger;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.videoTable th {
+    background-color: #f2f2f2;
+    color: #333;
+    text-transform: uppercase;
+}
+
+.clickable {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.clickable:hover {
+    color: lightblue;
+    font-weight: 600;
+}
+
+#backButton {
+    margin-top: 10px;
+    padding: 5px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 12vmax;
+    margin-top: 2vmax;
+    background-color: transparent;
+    border: none;
+    position: absolute;
+}
+
+#backButton:hover {
+    transform: scale(1.2);
+}
+
+#backButton svg {
+    width: 30px;
+    /* Set the width to your desired size */
+    height: 30px;
+    /* Set the height to your desired size */
+}
+
+/*VIDEO LIST TABLE*/
+
+/*VIDEO CONTAINER*/
+
+#video-container {
+    display: flex;
+    /* Horizontally center */
+    /* Vertically center */
+    height: 100vh;
+
+}
+
+#my-video {
+    width: 100%;
+    height: 50%;
+    padding-bottom: 600px;
+    object-fit: cover;
+    max-width: 100%;
+    /* Prevent overflow by setting max width */
+    max-height: 50%;
+    border: 3px solid #000000;
+    border-radius: 8px;
+    outline: none;
+}
+
+.vjs-tech {
+    user-select: none;
+    /* Standard syntax */
+    outline: none;
+}
+
+.vjs-big-play-button {
+    z-index: 11;
+}
+
+/*VIDEO CONTAINER*/
+
+/*VIDEO TITLE*/
+#title-container {
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    color: #505050;
+    text-align: left;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: left;
+    max-width: 700px;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    /* Center the content horizontally */
+    align-items: flex-start;
+    /* Align items to the top to avoid bottom space */
+    margin-top: 80px;
+}
+
+.video-container {
+    width: 70%;
+    /* Video takes 70% of the width */
+    margin-right: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    border-radius: 13px;
+    height: max-content;
+    /* Space between video and playlist */
+    display: flex;
+    margin-left: 100px;
+    /* Center the video inside its container */
+    background-color: transparent;
+    padding-bottom: 10px;
+}
+
+.playlist-container {
+    width: 30%;
+    margin-left: 20px;
+    background-color: #201c1c;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Episode list style */
+#episode-list {
+    min-height: 604px;
+    /* Limit the height of the list */
+    max-height: 604px;
+    /* Limit the height of the list */
+    overflow-y: auto;
+    /* Enable vertical scrolling */
+    list-style: none;
+    /* Remove list bullets */
+    margin: 0;
+    padding-right: 35px;
+    padding-left: 35px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+#episode-list li {
+    height: 70px;
+    padding: 8px;
+    background-color: #fff;
+    margin-bottom: 30px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+#episode-list li:hover {
+    background-color: #e0e0e0;
+}
+
+#episode-list li:hover {
+    background-color: #e0e0e0;
+}
+
+/* Style for the selected episode */
+#episode-list li.selected {
+    background-color: #007BFF;
+    /* Highlight with blue background */
+    color: white;
+}
+
+/* Style for the video player */
+#my-video {
+    width: 100%;
+    /* Make the video fill the video container */
+    border-radius: 8px;
+    background-color: #000;
+    /* Default background color for the video player */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    /* Add shadow around the video */
+}
+
+/*VIDEO TITLE*/
+#currentPlaying {
+    cursor: pointer;
+    padding: 10px 20px;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    color: #cccccc;
+    margin-top: 20px;
+    font-size: larger;
+}
+
+#currentPlaying:hover {
+    color: #828282;
+}
+
+
+/*FULL SCREEN SWITCH*/
+
+#fullscreen-container {
+    transform: translateX(90vmax);
+    margin-top: -60px;
+}
+
+.fullscreenSwitch {
+    --input-focus: #2d8cf0;
+    --font-color: #323232;
+    --font-color-sub: #666;
+    --bg-color: #fff;
+    --bg-color-alt: #666;
+    --main-color: #323232;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    width: 50px;
+    height: 20px;
+}
+
+.toggle {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    box-shadow: 4px 4px var(--main-color);
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-colorcolor);
+    transition: 0.3s;
+}
+
+.slider:before {
+    box-sizing: border-box;
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    border: 2px solid var(--main-color);
+    border-radius: 5px;
+    left: -2px;
+    bottom: 2px;
+    background-color: var(--bg-color);
+    box-shadow: 0 3px 0 var(--main-color);
+    transition: 0.3s;
+}
+
+.toggle:checked+.slider {
+    background-color: var(--input-focus);
+}
+
+.toggle:checked+.slider:before {
+    transform: translateX(30px);
+}
+
+
+/*FULLSCREEN SWITCH*/
+
+/*WARNING CONTAINER*/
+
+#warning-container {
+    text-align: center;
+    margin: 20px auto;
+    max-width: 800px;
+    padding: 15px;
+    background: #ffdddd;
+    color: #a33;
+    font-size: 18px;
+    font-weight: bold;
+    border: 1px solid #f5c6c6;
+    border-radius: 8px;
+    display: none;
+}
+
+.error-message {
+    display: block;
+}
+
+/*WARNING CONTAINER*/
+
+/*COPY BUTTON*/
+
+.copy_toggle {
+    transform: translate(60vmax, -50px);
+    width: 30px;
+    height: 30px;
+    user-select: none;
+    /* Standard syntax */
+}
+
+.copy_toggle>svg {
+    width: 25px;
+    height: 25px;
+    align-items: center;
+}
+
+.copy_toggle.clicked>svg>path {
+    animation: clipboard-check 300ms linear forwards;
+}
+
+@keyframes clipboard-check {
+    100% {
+        color: #808080;
+        d: path("M 9 5 H 7 a 2 2 0 0 0 -2 2 v 12 a 2 2 0 0 0 2 2 h 10 a 2 2 0 0 0 2 -2 V 7 a 2 2 0 0 0 -2 -2 h -2 M 9 5 a 2 2 0 0 0 2 2 h 2 a 2 2 0 0 0 2 -2 M 9 5 a 2 2 0 0 1 2 -2 h 2 a 2 2 0 0 1 2 2 m -6 9 l 2 2 l 4 -4");
+    }
+}
+
+/*COPY BUTTON*/
+
+/*HISTORY CARD*/
+#card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    margin-top: 50px;
+    flex-direction: column;
+}
+
+.card {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    width: 700px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.card a {
+    text-decoration: none;
+    color: black;
+}
+
+.card a:hover {
+    color: rgb(2, 17, 239);
+}
+
+/* Close Button */
+.close-btn {
+    background-color: transparent;
+    color: rgb(0, 0, 0);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.1s ease-in;
+}
+
+.close-btn:hover {
+    transform: scale(1.1);
+}
+
+.history-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+    /* Space between title and cards */
+    text-align: center;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: #76c7c0;
+    width: 0%;
+    transition: width 0.3s ease-in-out;
+}
+
+/*HISTORY CARD*/
+
+/*PLAY PAUSE POPUP*/
+.play-pause-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    --color: white;
+    --size: 80px;
+    fill: var(--color);
+    font-size: var(--size);
+    padding: 15px 30px;
+    border-radius: 6px;
+    border: white solid 2px;
+    font-size: 16px;
+    text-align: center;
+    display: none;
+    z-index: 1000;
+    width: auto;
+    height: auto;
+    min-width: 120px;
+    /* Ensures a minimum width */
+    min-height: 60px;
+    /* Ensures a minimum height */
+    box-sizing: border-box;
+    /* Prevents padding from affecting the overall size */
+}
+
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+.fade-out {
+    opacity: 1;
+    animation: fadeOut 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+.play-pause-popup {
+    z-index: 1;
+    user-select: none;
+    /* Standard syntax */
+}
+
+.play-pause-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.play-pause-text {
+    font-size: 16px;
+}
+
+/*PLAY PAUSE POPUP*/
+
+/*PLAY PROGRESS COLOR*/
+
+.vjs-play-progress {
+    background-color: #bf3b4d !important;
+}
+
+/*PLAY PROGRESS COLOR*/
+
+/*PLAY PAUSE DETECT OVERLAY*/
+
+.detectclick-overlay {
+    user-select: none;
+    /* Standard syntax */
+    position: absolute;
+    top: 0px;
+    left: 0;
+    width: 100%;
+    height: 95% !important;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 24px;
+    z-index: 2;
+}
+
+/*PLAY PAUSE DETECT OVERLAY*/
+
+/*FULLSCREEN DETECT OVERLAY*/
+
+.video-overlay {
+    z-index: 100;
+}
+
+.vjs-modal-dialog-content{
+    z-index: 1000 !important;
+}
+
+/*FULLSCREEN DETECT OVERLAY*/
+
+/*EXIT FULLSCREEN EFFECT*/
+
+.video-js.fullscreen-effect {
+    transform: scale(2.3);
+    /* Scale up the video when entering fullscreen */
+    transition-duration: 0s;
+    /* No transition when enlarging */
+    z-index: 2;
+    margin-top: 5px;
+}
+
+/* Non-enlarged state - when not in fullscreen */
+.video-js:not(.fullscreen-effect) {
+    transition-duration: 0.3s;
+    z-index: 1;
+    /* Transition back to normal size */
+}
+
+/*EXIT FULLSCREEN EFFECT*/
+
+/*LOADING EFFECT*/
+.loading {
+    width: 44px;
+    height: 44px;
+    animation: loading-animation 2s infinite ease;
+    transform-style: preserve-3d;
+}
+
+.loading>div {
+    background-color: rgba(0, 77, 255, 0.2);
+    height: 100%;
+    position: absolute;
+    width: 100%;
+    border: 2px solid #dadada;
+}
+
+.loading div:nth-of-type(1) {
+    transform: translateZ(-22px) rotateY(180deg);
+}
+
+.loading div:nth-of-type(2) {
+    transform: rotateY(-270deg) translateX(50%);
+    transform-origin: top right;
+}
+
+.loading div:nth-of-type(3) {
+    transform: rotateY(270deg) translateX(-50%);
+    transform-origin: center left;
+}
+
+.loading div:nth-of-type(4) {
+    transform: rotateX(90deg) translateY(-50%);
+    transform-origin: top center;
+}
+
+.loading div:nth-of-type(5) {
+    transform: rotateX(-90deg) translateY(50%);
+    transform-origin: bottom center;
+}
+
+.loading div:nth-of-type(6) {
+    transform: translateZ(22px);
+}
+
+@keyframes loading-animation {
+    0% {
+        transform: rotate(45deg) rotateX(-25deg) rotateY(25deg);
+    }
+
+    50% {
+        transform: rotate(45deg) rotateX(-385deg) rotateY(25deg);
+    }
+
+    100% {
+        transform: rotate(45deg) rotateX(-385deg) rotateY(385deg);
+    }
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>輕番播放器</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+    <div id="loading-placeholder"></div>
+    <div id="header-placeholder"></div>
+    <main>
+        <button class="backButton" onclick="goHome()">
+            <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1024 1024">
+                <path
+                    d="M874.690416 495.52477c0 11.2973-9.168824 20.466124-20.466124 20.466124l-604.773963 0 188.083679 188.083679c7.992021 7.992021 7.992021 20.947078 0 28.939099-4.001127 3.990894-9.240455 5.996574-14.46955 5.996574-5.239328 0-10.478655-1.995447-14.479783-5.996574l-223.00912-223.00912c-3.837398-3.837398-5.996574-9.046027-5.996574-14.46955 0-5.433756 2.159176-10.632151 5.996574-14.46955l223.019353-223.029586c7.992021-7.992021 20.957311-7.992021 28.949332 0 7.992021 8.002254 7.992021 20.957311 0 28.949332l-188.073446 188.073446 604.753497 0C865.521592 475.058646 874.690416 484.217237 874.690416 495.52477z">
+                </path>
+            </svg>
+            <span>Back</span>
+        </button>
+        <button id="backButton" style="display: none;" onclick="goBack()"><svg height="16" width="16"
+                xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1024 1024">
+                <path
+                    d="M874.690416 495.52477c0 11.2973-9.168824 20.466124-20.466124 20.466124l-604.773963 0 188.083679 188.083679c7.992021 7.992021 7.992021 20.947078 0 28.939099-4.001127 3.990894-9.240455 5.996574-14.46955 5.996574-5.239328 0-10.478655-1.995447-14.479783-5.996574l-223.00912-223.00912c-3.837398-3.837398-5.996574-9.046027-5.996574-14.46955 0-5.433756 2.159176-10.632151 5.996574-14.46955l223.019353-223.029586c7.992021-7.992021 20.957311-7.992021 28.949332 0 7.992021 8.002254 7.992021 20.957311 0 28.949332l-188.073446 188.073446 604.753497 0C865.521592 475.058646 874.690416 484.217237 874.690416 495.52477z">
+                </path>
+            </svg>
+        </button>
+        <div id="searchContainer"></div>
+        <div id="videoTable-placeholder"></div>
+    </main>
+    <div id="backToTop-placeholder"></div>
+    <div id="footer-placeholder"></div>
+</body>
+<script>
+    let currentLevel = "main";
+    let previousSeason = -1;
+
+    // Function to search anime
+    function searchAnime() {
+        const query = document.getElementById("searchInput").value.trim().toLowerCase();
+        if (query) {
+            // If the user presses Enter, redirect to list.html with the query
+            window.location.href = `list.html?search=${encodeURIComponent(query)}`;
+        } else {
+            // If there's no query, simply live filter the results
+            generateTable(query);
+        }
+    }
+
+    function generateTable(searchQuery = "") {
+        const tablePlaceholder = document.getElementById("videoTable-placeholder");
+        tablePlaceholder.innerHTML = "";
+
+        const table = document.createElement("table");
+        table.className = "videoTable";
+
+        const header = table.createTHead().insertRow();
+        header.innerHTML = `<th>Anime Title</th><th>Seasons</th>`;
+
+        let dataFound = false;
+
+        videoData.forEach((video, index) => {
+            // If searchQuery is provided, filter the video data
+            if (video.videoName.toLowerCase().includes(searchQuery) || video.seasons.some(season => season.seasonName.toLowerCase().includes(searchQuery))) {
+                dataFound = true;
+
+                const row = table.insertRow();
+                const videoCell = row.insertCell();
+                const seasonCell = row.insertCell();
+
+                videoCell.innerHTML = `<span class="clickable" onclick="showSeasons(${index}); createBackToTopButton();">${video.videoName}</span>`;
+                seasonCell.innerText = video.seasons.length;
+            }
+        });
+
+        // If no data is found after filtering, show a "No data entries" message
+        if (!dataFound) {
+            const row = table.insertRow();
+            const noDataCell = row.insertCell();
+            noDataCell.colSpan = 2;
+            noDataCell.innerText = "No data entries found.";
+            noDataCell.style.textAlign = "center";
+        }
+
+        tablePlaceholder.appendChild(table);
+        toggleBackButton(searchQuery !== "");
+    }
+
+    function showSeasons(videoIndex) {
+        const video = videoData[videoIndex];
+        currentLevel = "seasons";
+
+        const tablePlaceholder = document.getElementById("videoTable-placeholder");
+        tablePlaceholder.innerHTML = "";
+
+        const table = document.createElement("table");
+        table.className = "videoTable";
+
+        const header = table.createTHead().insertRow();
+
+
+        video.seasons.forEach((season, seasonIndex) => {
+            header.innerHTML = `<th>${video.videoName}</th><th>Episodes</th>`;
+            const row = table.insertRow();
+            const seasonCell = row.insertCell();
+            const rangeCell = row.insertCell();
+
+            seasonCell.innerHTML = `<span class="clickable" onclick="showEpisodes(${videoIndex}, ${seasonIndex})">${season.seasonName}</span>`;
+            rangeCell.innerText = season.episodeRange;
+        });
+
+        tablePlaceholder.appendChild(table);
+        toggleBackButton(true);
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    function showEpisodes(videoIndex, seasonIndex) {
+        previousSeason = videoIndex;
+        const season = videoData[videoIndex].seasons[seasonIndex];
+        currentLevel = "episodes";
+
+        const tablePlaceholder = document.getElementById("videoTable-placeholder");
+        tablePlaceholder.innerHTML = "";
+
+        const table = document.createElement("table");
+        table.className = "videoTable";
+
+        const header = table.createTHead().insertRow();
+        header.innerHTML = `<th colspan="2">${season.seasonName} - Episodes</th>`;
+
+        season.episodes.forEach(episode => {
+            const row = table.insertRow();
+            const epCell = row.insertCell();
+
+            epCell.innerHTML = `<span class="clickable" onclick="watchEpisode('${season.seasonName}','${episode.episode}')">${episode.episode}</span>`;
+        });
+
+        tablePlaceholder.appendChild(table);
+        toggleBackButton(true);
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    function watchEpisode(name, episode) {
+        // Construct the URL for player.html with the episode URL as a query parameter
+        const playerUrl = `player.html?episodeUrl=${encodeURIComponent(name + '?' + episode)}`;
+        // Open the player.html page with the episode URL
+        window.location.href = playerUrl;
+    }
+
+    function goBack() {
+        if (currentLevel === "episodes") {
+            currentLevel = "seasons";
+            generateTable();
+            if(previousSeason != -1){
+                showSeasons(previousSeason);
+            }
+        } else if (currentLevel === "seasons") {
+            currentLevel = "main";
+            generateTable();
+        } else if (currentLevel === "main") {
+            // Reset to normal view (all anime items)
+            window.location.href = 'list.html'; // Reset to list.html without search query
+        }
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    function toggleBackButton(show) {
+        const backButton = document.getElementById("backButton");
+        backButton.style.display = show ? "block" : "none";
+    }
+
+    window.onload = function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search') || ''; // Default to an empty string if no query is provided
+
+        // Generate the table with the search query (from the URL or empty)
+        generateTable(searchQuery);
+
+        // If the search query exists in the URL, update the input field with the query
+        if (searchQuery) {
+            document.getElementById("searchInput").value = searchQuery;
+        }
+        createBackToTopButton();
+    };
+
+</script>
+
+</html>

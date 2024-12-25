@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>輕番播放器</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="script.js" defer></script>
+    <link href="video-js.min.css" rel="stylesheet">
+    <script src="video.min.js"></script>
+</head>
+
+<body>
+    <div id="loading-placeholder"></div>
+    <div id="header-placeholder"></div>
+    <main>
+        <button class="backButton" onclick="goHome()">
+            <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1024 1024">
+                <path
+                    d="M874.690416 495.52477c0 11.2973-9.168824 20.466124-20.466124 20.466124l-604.773963 0 188.083679 188.083679c7.992021 7.992021 7.992021 20.947078 0 28.939099-4.001127 3.990894-9.240455 5.996574-14.46955 5.996574-5.239328 0-10.478655-1.995447-14.479783-5.996574l-223.00912-223.00912c-3.837398-3.837398-5.996574-9.046027-5.996574-14.46955 0-5.433756 2.159176-10.632151 5.996574-14.46955l223.019353-223.029586c7.992021-7.992021 20.957311-7.992021 28.949332 0 7.992021 8.002254 7.992021 20.957311 0 28.949332l-188.073446 188.073446 604.753497 0C865.521592 475.058646 874.690416 484.217237 874.690416 495.52477z">
+                </path>
+            </svg>
+            <span>Back</span>
+        </button>
+        <div id="fullscreen-container">
+            <label class="fullscreenSwitch" for="fullscreen-toggle">
+                <input class="toggle" type="checkbox" id="fullscreen-toggle" />
+                <span class="slider"></span>
+                <span class="card-side"></span>
+                Fullscreen
+            </label>
+        </div>
+        <div id="warning-container"></div>
+        <div class="container">
+            <!-- Left side: Video player -->
+            <div id="video-container" class="video-container"></div>
+            <!-- Right side: Playlist of other episodes -->
+            <div id="playlist-container" class="playlist-container">
+                <div id="currentPlaying">Current Playing</div>
+                <ul id="episode-list"></ul> <!-- List of episodes (playlist) -->
+            </div>
+        </div>
+    </main>
+    <div id="backToTop-placeholder"></div>
+    <div id="footer-placeholder"></div>
+    <script>
+        window.onload = function () {
+            createVideo();
+            currentPlaying();
+            scrollSelected();
+            videoTime();
+            const player = videojs('my-video'); // Ensure the player is initialized
+            exitFullscreen(player);
+            player.ready(function () {
+                // Now that the player is ready, we can safely add event listeners
+                document.addEventListener('keydown', keyControl);
+            });
+        };
+
+        function createVideo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const episodeUrl = decodeURIComponent(urlParams.get('episodeUrl'));
+            const warningContainer = document.getElementById('warning-container');
+            let endedFlag = { value: false };
+
+            if (episodeUrl !== 'null' && episodeUrl !== undefined) {
+                const [seasonName, episodeName] = episodeUrl.split('?');
+                if (seasonName && episodeName) {
+                    let videoUrl = null;
+                    let videoTitle = '';
+                    let playlist = [];
+
+                    videoData.forEach(series => {
+                        series.seasons.forEach(season => {
+                            if (season.seasonName === seasonName) {
+                                season.episodes.forEach(ep => {
+                                    if (ep.episode === episodeName) {
+                                        videoUrl = ep.url;
+                                        videoTitle = `${seasonName} - ${episodeName}`;
+                                    }
+                                    playlist.push({ episode: ep.episode, url: ep.url });
+                                });
+                            }
+                        });
+                    });
+
+                    if (videoUrl) {
+                        warningContainer.innerHTML = ''; // Clear any previous warning
+                        setupVideoPlayer(videoUrl, videoTitle, playlist, seasonName, episodeName, endedFlag);
+                        createFullscreenOverlay();
+                        createPlayPauseOverlay();
+                        const player = videojs('my-video');
+                        const defaultSpinner = player.getChild('loadingSpinner');
+                        if (defaultSpinner) {
+                            defaultSpinner.el().innerHTML = `
+                      <div class="loading">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                      </div>
+                    `;
+                        }
+                    } else {
+                        displayWarning('Episode not found');
+                    }
+                } else {
+                    displayWarning('Invalid episode URL');
+                }
+            } else {
+                displayWarning("Oops! It looks like you're trying to access the video player without selecting a video.");
+            }
+        }
+
+        function setupVideoPlayer(videoUrl, videoTitle, playlist, seasonName, episodeName, endedFlag) {
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.innerHTML = '';
+
+            // Retrieve the 'time' parameter from the URL (if it exists)
+            const urlParams = new URLSearchParams(window.location.search);
+            const timeParam = urlParams.get('time');
+            const videoState = timeParam ? { currentTime: parseInt(timeParam, 10) } : { currentTime: 0 };
+
+            // Create video element
+            const videoElement = document.createElement('video');
+            videoElement.id = 'my-video';
+            videoElement.style.borderRadius = '8px';
+            videoElement.style.objectFit = 'cover';
+            videoElement.className = 'video-js video-player';
+            videoElement.controls = true;
+            videoElement.preload = 'auto';
+            videoElement.setAttribute('data-setup', '{"playbackRates": [0.5, 1, 1.5, 2]}');
+            videoElement.setAttribute('tabindex', '-1'); // Disable tabbing for the video element
+
+            // Create source element
+            const sourceElement = document.createElement('source');
+            sourceElement.src = videoUrl;
+            sourceElement.type = 'video/mp4';
+            videoElement.appendChild(sourceElement);
+
+            // Append video element to the container
+            videoContainer.appendChild(videoElement);
+
+            // Create title container and append it to the video container
+            const titleContainer = document.createElement('div');
+            titleContainer.id = 'title-container';
+            titleContainer.innerHTML = videoTitle;
+            videoContainer.appendChild(titleContainer);
+
+            const copyButton = `<button class="copy_toggle" tabindex="-1" type="button" onclick="copyUrl()">
+      <svg
+        width="16px"
+        height="16px"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+        stroke-width="2"
+        stroke="currentColor"
+        fill="none">
+        <path
+          d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"
+        ></path>
+        <path
+          d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"
+        ></path>
+      </svg>
+    </button>`;
+            const tempContainer = document.createElement('div');
+            tempContainer.innerHTML = copyButton;  // Now it's a DOM element
+
+            // Extract the first child, which is the <button> element
+            const copyButtonElement = tempContainer.firstChild;
+
+            // Now you can append the copyButtonElement to your container
+            videoContainer.appendChild(copyButtonElement);
+
+            // Disable tabbing for the copy button
+            copyButtonElement.setAttribute('tabindex', '-1');
+
+            // Initialize video player
+            const player = videojs('my-video');
+            player.ready(function () {
+                player.currentTime(videoState.currentTime); // Set the current time based on 'time' parameter
+            });
+
+            // Setup episode list and other configurations
+            setupEpisodeList(playlist, episodeName, player, seasonName, endedFlag, videoUrl);
+
+            // Disable tabbing for all controls inside the video player
+            const playerElement = player.el();
+            const controls = playerElement.querySelectorAll('.vjs-control');
+            controls.forEach(function (control) {
+                control.setAttribute('tabindex', '-1');
+            });
+        }
+
+        function setupEpisodeList(playlist, episodeName, player, seasonName, endedFlag, videoUrl) {
+            const episodeList = document.getElementById('episode-list');
+            episodeList.innerHTML = '';
+
+            playlist.forEach((ep, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = ep.episode;
+                listItem.dataset.index = index;
+
+                listItem.onclick = function () {
+                    playEpisode(ep, listItem, playlist, player, seasonName, endedFlag, videoUrl);
+                    scrollSelected();
+                    const copyButton = document.querySelector('.copy_toggle');
+                    copyButton.classList.remove('clicked');
+                };
+
+                if (ep.episode === episodeName) {
+                    listItem.classList.add('selected');
+                }
+
+                episodeList.appendChild(listItem);
+            });
+
+            player.on('ended', function () {
+                const currentIndex = getCurrentEpisodeIndex(playlist);
+                if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+                    const nextEpisode = playlist[currentIndex + 1];
+                    const nextEpisodeItem = document.querySelector(`li[data-index="${currentIndex + 1}"]`);
+                    endedFlag.value = true;
+                    playEpisode(nextEpisode, nextEpisodeItem, playlist, player, seasonName, endedFlag, videoUrl);
+                    let videoTitle = document.getElementById('title-container').textContent;
+                    createVideoTitleOverlay(videoTitle);
+                    checkVideoEnded('true');
+                }
+            });
+        }
+
+        function playEpisode(ep, listItem, playlist, player, seasonName, obj, videoUrl) {
+            const titleContainer = document.getElementById('title-container');
+            player.src({ type: 'video/mp4', src: ep.url });
+            obj.value ? player.play() : player.pause();
+            obj.value = false;
+
+            titleContainer.innerHTML = `${seasonName} - ${ep.episode}`;
+
+            const previousSelected = document.querySelector('.selected');
+            if (previousSelected) {
+                previousSelected.classList.remove('selected');
+            }
+            listItem.classList.add('selected');
+
+            const newUrl = `${window.location.pathname}?episodeUrl=${encodeURIComponent(`${seasonName}?${ep.episode}`)}`;
+            window.history.pushState(null, '', newUrl);
+        }
+
+        function getCurrentEpisodeIndex(playlist) {
+            const currentEpisode = document.querySelector('.selected')?.textContent;
+            return playlist.findIndex(ep => ep.episode === currentEpisode);
+        }
+
+        function displayWarning(message) {
+            const episodeList = document.getElementById('playlist-container');
+            const warningContainer = document.getElementById('warning-container');
+            const videoContainer = document.getElementById('video-container');
+            warningContainer.innerHTML = `<span class="error-message">${message}</span>`;
+            warningContainer.style.display = 'block';
+            episodeList.style.display = 'none';
+            videoContainer.style.display = 'none';
+        }
+
+        function currentPlaying() {
+            document.getElementById('currentPlaying').onclick = function () {
+                const episodeList = document.getElementById('episode-list');
+                const selectedEpisode = document.querySelector('#episode-list .selected');
+
+                if (selectedEpisode) {
+                    // Scroll to the selected episode smoothly
+                    episodeList.scrollTo({
+                        top: selectedEpisode.offsetTop - episodeList.offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            };
+        }
+
+        function handleFullscreen() {
+            const player = videojs('my-video');
+            const videoElement = player.el();
+            if (videoElement.requestFullscreen) {
+                videoElement.requestFullscreen();
+            } else if (videoElement.webkitRequestFullscreen) {
+                videoElement.webkitRequestFullscreen(); // Safari
+            } else if (videoElement.msRequestFullscreen) {
+                videoElement.msRequestFullscreen(); // IE/Edge
+            }
+        }
+
+        function scrollSelected() {
+            const container = document.querySelector('#episode-list');  // The parent div with the ID playlist-container
+            const targetElement = document.querySelector('.selected');  // The element inside the container
+
+            if (container && targetElement) {
+                const elementOffset = targetElement.offsetTop;  // Distance from the top of the container to the target element
+                const containerHeight = container.clientHeight;  // Height of the container
+                const elementHeight = targetElement.clientHeight;  // Height of the target element
+
+                // Calculate the scroll position to center the element
+                const scrollToPosition = elementOffset - (containerHeight / 1) + (elementHeight / 1);
+
+                // Scroll the container to the calculated position
+                container.scrollTo({
+                    top: scrollToPosition,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        function videoTime() {
+            const player = videojs('my-video');
+            let updateCount = 0;
+            let lastUrl = window.location.href;  // Track the last known URL
+
+            // Function to check for URL changes
+            function checkUrlChange() {
+                if (window.location.href !== lastUrl) {
+                    // URL has changed, reset the updateCount
+                    updateCount = 0;
+                    createFullscreenOverlay();
+                    lastUrl = window.location.href;  // Update lastUrl to the new URL
+                }
+            }
+
+            // Listen for the timeupdate event
+            player.on('timeupdate', function () {
+                checkUrlChange();  // Check if the URL has changed
+                updateCount++; // Increment counter each time the event fires
+                // Only store data after the third timeupdate event
+                if (updateCount >= 3) {
+                    const currentTime = Math.floor(player.currentTime());
+                    const videoDuration = Math.floor(player.duration()); // Get the total video duration
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const episodeUrl = urlParams.get('episodeUrl'); // Get the episodeUrl parameter
+
+                    // Get current date and time
+                    const currentDateTime = new Date().toISOString(); // ISO format of current date and time
+
+                    // Store video state along with current date and time
+                    const videoState = {
+                        episodeUrl: episodeUrl,
+                        currentTime: currentTime,
+                        duration: videoDuration, // Add the total video length here
+                        timestamp: currentDateTime
+                    };
+
+                    // Store the videoState object in localStorage
+                    localStorage.setItem(`videoState:${episodeUrl}`, JSON.stringify(videoState));
+                }
+            });
+            cleanUpOldVideoStates();
+        }
+
+        function cleanUpOldVideoStates() {
+            const allKeys = Object.keys(localStorage);
+            const thirtyDaysAgo = new Date().getTime() - (30 * 24 * 60 * 60 * 1000); // 30 days in ms
+
+            allKeys.forEach(key => {
+                if (key.startsWith('videoState:')) {
+                    const videoState = JSON.parse(localStorage.getItem(key));
+                    const timestamp = new Date(videoState.timestamp).getTime();
+
+                    // Remove old states (older than 30 days)
+                    if (timestamp < thirtyDaysAgo) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            });
+        }
+
+        function copyUrl() {
+            const url = window.location.href;
+            const urlObj = new URL(url);
+            urlObj.searchParams.delete('time');
+            const cleanUrl = urlObj.toString();
+            const input = document.createElement('input');
+            input.value = cleanUrl;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+        }
+
+        let skipPopupTimeout = null; // Global variable to track the timeout for skip animation
+        let popupTimeout = null; // Global variable to track the timeout
+
+        function showPlayPausePopup(player, action) {
+            const videoContainer = player.el();
+            let popup = videoContainer.querySelector('.play-pause-popup');
+
+            // Create the popup element if it doesn't exist
+            if (!popup) {
+                popup = document.createElement('div');
+                popup.className = 'play-pause-popup';
+                videoContainer.appendChild(popup);
+            }
+
+            if (player.ended()) {
+                return;
+            }
+
+            // If the video has been played for more than 1 second, show the popup
+            if (player.currentTime() > 0 || player.hasPlayedOnce) {
+                // Clear any ongoing animation timeout if function is called again
+                if (popupTimeout) {
+                    clearTimeout(popupTimeout);
+                }
+                // Ensure the popup is hidden before starting the animation
+                popup.style.display = 'none';
+                popup.classList.remove('fade-in', 'fade-out');
+
+                // Force reflow to ensure the styles are reset before triggering the new animation
+                void popup.offsetWidth;
+
+                // Show the popup and trigger fade-in animation
+                popup.style.display = 'block';
+                popup.classList.add('fade-in');
+
+                // Set the content of the popup based on play/pause state
+                popup.innerHTML = `
+              <div class="play-pause-icon">${action === 'play' ? '<svg viewBox="0 0 384 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="play"><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"></path></svg>' : '<svg viewBox="0 0 320 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="pause"><path d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"></path></svg>'}</div>
+              <div class="play-pause-text">${action === 'play' ? 'Playing' : 'Paused'}</div>
+          `;
+
+                // Hide the popup after 1 second (500ms after the popup shows)
+                popupTimeout = setTimeout(() => {
+                    popup.classList.remove('fade-in');
+                    popup.classList.add('fade-out');
+                    setTimeout(() => {
+                        popup.style.display = 'none';
+                    }, 200); // Allow the fade-out animation to complete
+                }, 300); // Show the popup for 1 second
+            }
+        }
+
+        function keyControl(event) {
+            const player = videojs('my-video'); // Get the player instance
+            const videoContainer = player.el();
+            let overlay = player.el().querySelector('.video-overlay');
+            // Check for spacebar (keyCode 32) or Enter (keyCode 13)
+            if ((event.keyCode === 32 || event.keyCode === 13)) {
+                event.preventDefault(); // Prevent scrolling or focusing
+                if (player.paused()) {
+                    if (overlay.style.display != 'block') {
+                        showPlayPausePopup(player, 'play'); // Show pause popup when video is paused
+                    }
+                    player.play(); // Start the video if it's paused
+                } else {
+                    if (overlay.style.display != 'block') {
+                        showPlayPausePopup(player, 'pause'); // Show pause popup when video is paused
+                    }
+                    player.pause(); // Pause the video if it's playing
+                }
+            }
+
+            let currentTime = player.currentTime();
+            const duration = player.duration();
+            const currentTimeNow = Date.now();
+            let skipBuffer = 5; // Fixed skip time of 5 seconds
+            let lastDirection = null;
+
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                event.preventDefault(); // Prevent scrolling in fullscreen
+                const direction = event.key === 'ArrowRight' ? 'forward' : 'backward';
+
+                player.currentTime(
+                    Math.min(duration, Math.max(0, currentTime + (direction === 'forward' ? skipBuffer : -skipBuffer)))
+                );
+
+                lastDirection = direction;
+            }
+
+            // Handle fullscreen toggling for F key or Arrow keys (keyCode: 37, 38, 39, 40)
+            if (event.keyCode === 70) {
+                event.preventDefault(); // Prevent default scrolling behavior
+
+                // Toggle fullscreen on F key or arrow keys
+                if (!document.fullscreenElement) {
+                    // Enter fullscreen mode
+                    if (videoContainer.requestFullscreen) {
+                        videoContainer.requestFullscreen();
+                    } else if (videoContainer.mozRequestFullScreen) { // Firefox
+                        videoContainer.mozRequestFullScreen();
+                    } else if (videoContainer.webkitRequestFullscreen) { // Chrome, Safari, Opera
+                        videoContainer.webkitRequestFullscreen();
+                    } else if (videoContainer.msRequestFullscreen) { // IE/Edge
+                        videoContainer.msRequestFullscreen();
+                    }
+                } else {
+                    // Exit fullscreen mode
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.mozCancelFullScreen) { // Firefox
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) { // Chrome, Safari, Opera
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) { // IE/Edge
+                        document.msExitFullscreen();
+                    }
+                }
+            }
+        }
+
+        function createFullscreenOverlay() {
+            const player = videojs('my-video');
+
+            // Check if the overlay already exists
+            let overlay = player.el().querySelector('.video-overlay');
+            if (!overlay) {
+                // If overlay does not exist, create it
+                overlay = document.createElement('div');
+                overlay.className = 'video-overlay'; // Add a class for easy identification
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.backgroundColor = 'transparent'; // Semi-transparent black
+                overlay.style.color = 'white'; // Text color if you want to display something on the overlay
+                overlay.style.display = 'flex';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.fontSize = '24px';
+
+                const playerElement = player.el();
+                playerElement.style.position = 'relative'; // Ensure the player is positioned correctly
+                playerElement.appendChild(overlay);
+            } else {
+                overlay.style.display = 'block';
+            }
+
+            const toggleCheckbox = document.getElementById('fullscreen-toggle');
+            const videoElement = document.getElementById('my-video');
+
+            let fullscreenTriggered = false; // Flag to track fullscreen state
+
+            // Check if localStorage already has a value for 'clickToFullscreen'
+            let savedFullscreenState = localStorage.getItem('clickToFullscreen');
+
+            // If 'clickToFullscreen' doesn't exist in localStorage, set it to 'true' by default
+            if (savedFullscreenState === null) {
+                savedFullscreenState = 'true'; // Default to true
+                localStorage.setItem('clickToFullscreen', savedFullscreenState); // Save to localStorage
+            }
+            // Set checkbox state based on the saved value (true = fullscreen enabled, false = disabled)
+            toggleCheckbox.checked = savedFullscreenState === 'true';
+
+            // Listen for checkbox changes to enable or disable fullscreen mode
+            toggleCheckbox.addEventListener('change', function () {
+                const isEnabled = this.checked;
+                localStorage.setItem('clickToFullscreen', isEnabled.toString()); // Save the user's preference in localStorage
+            });
+
+            let fullscreenState;
+            let videoTitle = document.getElementById('title-container').textContent;
+            // Add an event listener to remove the overlay when it's clicked
+            overlay.addEventListener('click', function () {
+                createVideoTitleOverlay(videoTitle);
+                overlay.style.display = 'none'; // Hide the overlay when clicked
+                fullscreenState = localStorage.getItem('clickToFullscreen');
+                if (fullscreenState == 'true') {
+                    handleFullscreen();
+                }
+                player.play();
+            });
+
+            // Add an event listener to hide the overlay when the play button is clicked
+            const playButton = player.el().querySelector('.vjs-big-play-button');
+            playButton.addEventListener('click', function () {
+                overlay.style.display = 'none'; // Hide overlay when play button is clicked
+                fullscreenState = localStorage.getItem('clickToFullscreen');
+                if (fullscreenState == 'true') {
+                    handleFullscreen();
+                }
+                player.play();
+            });
+
+            if(checkVideoEnded()=='true'){
+                overlay.style.display = 'none';
+                checkVideoEnded('false');
+            }
+        }
+
+        function createPlayPauseOverlay() {
+            const player = videojs('my-video');
+
+            // Check if the overlay already exists
+            let overlay = player.el().querySelector('.detectclick-overlay');
+
+            if (!overlay) {
+                // If overlay does not exist, create it
+                overlay = document.createElement('div');
+                overlay.className = 'detectclick-overlay'; // Change the class name to 'detectclick-overlay'
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.backgroundColor = 'transparent'; // Transparent background
+                overlay.style.zIndex = '10'; // Ensure it's on top of the player
+                overlay.style.display = 'flex';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.fontSize = '24px';
+
+                // Ensure the player container is positioned correctly
+                const playerElement = player.el();
+                playerElement.style.position = 'relative'; // Ensure the player is positioned correctly
+                playerElement.appendChild(overlay);
+            }
+
+            // Click event to toggle play/pause on the video
+            overlay.addEventListener('click', function () {
+                if (player.paused()) {
+                    showPlayPausePopup(player, 'play'); // Show play popup when video is paused
+                    player.play(); // Start the video if it's paused
+                } else {
+                    showPlayPausePopup(player, 'pause'); // Show pause popup when video is playing
+                    player.pause(); // Pause the video if it's playing
+                }
+            });
+        }
+
+        function exitFullscreen(player) {
+            player.on('fullscreenchange', () => {
+                if (player.isFullscreen()) {
+                    player.el().classList.add('fullscreen-effect');
+                } else {
+                    player.el().classList.remove('fullscreen-effect');
+                }
+            });
+        }
+
+        function createVideoTitleOverlay(videoTitle) {
+            const player = videojs('my-video');
+
+            // Check if the overlay already exists
+            let overlay = player.el().querySelector('.titleOverlay');
+
+            if (!overlay) {
+                // Create overlay if it doesn't exist
+                overlay = document.createElement('div');
+                overlay.className = 'titleOverlay';
+                overlay.style.position = 'absolute';
+                overlay.style.top = '10px';
+                overlay.style.left = '10px';
+                overlay.style.padding = '10px 20px';
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                overlay.style.color = 'white';
+                overlay.style.fontSize = '20px';
+                overlay.style.borderRadius = '5px';
+                overlay.style.opacity = '0.9'; // Initially visible
+                overlay.style.transition = 'opacity 0.5s ease';
+                overlay.textContent = videoTitle;
+
+                // Ensure the player container is positioned correctly
+                const playerElement = player.el();
+                playerElement.style.position = 'relative';
+                playerElement.appendChild(overlay);
+
+                let hideTimeout;
+                // Reset overlay visibility timer on user activity
+                player.on('useractive', function () {
+                    overlay.style.opacity = '0.9';
+                });
+
+                // Start hiding the overlay after inactivity
+                player.on('userinactive', function () {
+                    clearTimeout(hideTimeout);
+                    hideTimeout = setTimeout(function () {
+                        overlay.style.opacity = '0';
+                    }, 300);
+                });
+            } else {
+                overlay.textContent = videoTitle;
+            }
+        }
+        function checkVideoEnded(inEndFlag) {
+            checkVideoEnded.outEndFlag ??= false; 
+            if (typeof inEndFlag !== 'undefined') {
+                checkVideoEnded.outEndFlag = inEndFlag;
+            }
+            return checkVideoEnded.outEndFlag;
+        }
+
+
+    </script>
+</body>
+
+</html>

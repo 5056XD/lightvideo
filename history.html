@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>輕番播放器</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+    <div id="loading-placeholder"></div>
+    <div id="header-placeholder"></div>
+    <main>
+        <button class="backButton" onclick="goHome()">
+            <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1024 1024">
+                <path
+                    d="M874.690416 495.52477c0 11.2973-9.168824 20.466124-20.466124 20.466124l-604.773963 0 188.083679 188.083679c7.992021 7.992021 7.992021 20.947078 0 28.939099-4.001127 3.990894-9.240455 5.996574-14.46955 5.996574-5.239328 0-10.478655-1.995447-14.479783-5.996574l-223.00912-223.00912c-3.837398-3.837398-5.996574-9.046027-5.996574-14.46955 0-5.433756 2.159176-10.632151 5.996574-14.46955l223.019353-223.029586c7.992021-7.992021 20.957311-7.992021 28.949332 0 7.992021 8.002254 7.992021 20.957311 0 28.949332l-188.073446 188.073446 604.753497 0C865.521592 475.058646 874.690416 484.217237 874.690416 495.52477z">
+                </path>
+            </svg>
+            <span>Back</span>
+        </button>
+        <div id="card-container"></div>
+    </main>
+    <div id="backToTop-placeholder"></div>
+    <div id="footer-placeholder"></div>
+</body>
+<script>
+    // Function to format the timestamp and display it as "Today", "Yesterday", or a specific day
+    function formatTimestamp(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+
+        // Format time (e.g., 12:30 PM or 13:30)
+        const options = { hour: '2-digit', minute: '2-digit', hour12: true };
+        const formattedTime = date.toLocaleString('en-US', options);
+
+        // Compare the date to today's date
+        const diffInTime = now - date;
+        const diffInDays = Math.floor(diffInTime / (1000 * 3600 * 24));
+
+        if (diffInDays === 0) return `Today, ${date.toLocaleDateString()} at ${formattedTime}`;
+        if (diffInDays === 1) return `Yesterday, ${date.toLocaleDateString()} at ${formattedTime}`;
+        if (diffInDays < 7) return `${date.toLocaleString('en-US', { weekday: 'long' })}, ${date.toLocaleDateString()} at ${formattedTime}`;
+
+        return `${date.toLocaleDateString()} at ${formattedTime}`;
+    }
+
+    // Function to create a history card dynamically
+    function createHistoryCard(episode) {
+        const { episodeUrl, currentTime, duration, timestamp } = episode;
+        const [videoName, episodeNo] = episodeUrl.split('?');
+        const title = `${videoName} ${episodeNo}`;
+
+        // Create the card div
+        const card = document.createElement('div');
+        card.classList.add('card');
+
+        // Create the close button
+        const closeButton = document.createElement('button');
+        closeButton.classList.add('close-btn');
+        closeButton.textContent = 'X';
+
+        // Remove the card and delete from localStorage when clicked
+        closeButton.onclick = () => {
+            localStorage.removeItem(`videoState:${episodeUrl}`);
+            card.remove();
+        };
+
+        const titleLink = document.createElement('a');
+        
+        if(currentTime - duration >= 0){
+            titleLink.href = `player.html?episodeUrl=${encodeURIComponent(episodeUrl)}&time=0`;
+        }else{
+            titleLink.href = `player.html?episodeUrl=${encodeURIComponent(episodeUrl)}&time=${currentTime}`;
+        }
+        // Create the title link
+        titleLink.textContent = title;
+
+        // Create the timestamp paragraph
+        const timestampParagraph = document.createElement('p');
+        timestampParagraph.textContent = `Last watched on: ${formatTimestamp(timestamp)}`;
+
+        // Create the progress bar container
+        const progressBarContainer = document.createElement('div');
+        progressBarContainer.classList.add('progress-bar-container');
+
+        // Create the progress bar element
+        const progressBar = document.createElement('div');
+        progressBar.classList.add('progress-bar');
+
+        // Calculate progress percentage
+        const progressPercentage = Math.min((currentTime / duration) * 100, 100);
+        progressBar.style.width = `${progressPercentage}%`;
+
+        // Append progress bar
+        progressBarContainer.appendChild(progressBar);
+
+        // Append all elements to the card
+        card.appendChild(closeButton);
+        card.appendChild(titleLink);
+        card.appendChild(timestampParagraph);
+        card.appendChild(progressBarContainer);
+
+        return card;
+    }
+
+    // Function to load video state history from localStorage and display it
+    function loadHistory() {
+        const cardContainer = document.getElementById('card-container');
+        cardContainer.innerHTML = ''; // Clear the container
+
+        // Create the "Watch history" title at the top
+        const historyTitle = document.createElement('div');
+        historyTitle.textContent = "Watch history";
+        historyTitle.classList.add('history-title');
+        cardContainer.appendChild(historyTitle);
+
+        // Get all keys from localStorage that start with "videoState:"
+        const videoStates = Object.keys(localStorage)
+            .filter(key => key.startsWith('videoState:'))
+            .map(key => JSON.parse(localStorage.getItem(key)));
+
+        // Sort video states by timestamp (newest first)
+        videoStates.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Create and append cards for each video state
+        videoStates.forEach(episode => {
+            const card = createHistoryCard(episode);
+            cardContainer.appendChild(card);
+        });
+    }
+
+    // Run the function to load history when the page is loaded
+    window.onload = loadHistory;
+
+</script>
+
+</html>
